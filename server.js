@@ -23,9 +23,27 @@ const io = new Server(server, {
 });
 
 // Middleware
+const cors = require('cors');
+
+// Allow your Netlify frontend to access the backend
+const allowedOrigins = [
+  'https://guileless-gingersnap-d19cf5.netlify.app',
+  'http://localhost:5500',
+  'http://127.0.0.1:5500'
+];
+
 app.use(cors({
-	origin: ['https://localhost:5500', 'https://https://guileless-gingersnap-d19cf5.netlify.app'],
-	credentials: true
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      console.log('Blocked origin:', origin);
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true
 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));

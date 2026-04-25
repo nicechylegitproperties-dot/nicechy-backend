@@ -23,7 +23,7 @@ const io = new Server(server, {
 });
 
 // Middleware
-const cors = require('cors');
+
 
 // Allow your Netlify frontend to access the backend
 const allowedOrigins = [

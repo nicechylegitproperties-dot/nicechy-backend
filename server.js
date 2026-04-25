@@ -27,7 +27,7 @@ const io = new Server(server, {
 
 // Allow your Netlify frontend to access the backend
 const allowedOrigins = [
-  'https://guileless-gingersnap-d19cf5.netlify.app',
+  'https://lucky-trifle-2221e8.netlify.app',
   'http://localhost:5500',
   'http://127.0.0.1:5500'
 ];

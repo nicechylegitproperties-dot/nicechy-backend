@@ -1,6 +1,6 @@
 const express = require('express');
 const { uploadImages, uploadVideo, uploadAvatar, handleMulterError } = require('../middleware/upload');
-const { protect } = require('../middleware/auth');
+const protect = require('../middleware/auth');
 const router = express.Router();
 
 // POST /api/upload/images

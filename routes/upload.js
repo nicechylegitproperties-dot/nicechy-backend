@@ -1,10 +1,10 @@
 const express = require('express');
 const { uploadImages, uploadVideo, uploadAvatar, handleMulterError } = require('../middleware/upload');
-const auth = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 const router = express.Router();
 
 // POST /api/upload/images
-router.post('/images', auth, (req, res) => {
+router.post('/images', protect, (req, res) => {
   req.setTimeout(300000); // 5 minutes
 
   uploadImages.array('images', 10)(req, res, (err) => {
@@ -17,14 +17,13 @@ router.post('/images', auth, (req, res) => {
       return res.status(400).json({ msg: 'No images uploaded.' });
     }
 
-    // multer-storage-cloudinary puts the Cloudinary URL in file.path
     const urls = req.files.map(file => file.path);
     return res.status(200).json({ urls });
   });
 });
 
 // POST /api/upload/video
-router.post('/video', auth, (req, res) => {
+router.post('/video', protect, (req, res) => {
   req.setTimeout(600000); // 10 minutes for video
 
   uploadVideo.single('video')(req, res, (err) => {
@@ -42,7 +41,7 @@ router.post('/video', auth, (req, res) => {
 });
 
 // POST /api/upload/avatar
-router.post('/avatar', auth, (req, res) => {
+router.post('/avatar', protect, (req, res) => {
   req.setTimeout(120000); // 2 minutes
 
   uploadAvatar.single('avatar')(req, res, (err) => {

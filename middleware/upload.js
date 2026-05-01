@@ -8,8 +8,8 @@ const imageStorage = new CloudinaryStorage({
   params: {
     folder: 'nicechi/images',
     allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
-    timeout: 120000, // 2 minutes per image
-    chunk_size: 20 * 1024 * 1024 // 20 MB chunks
+    quality: 'auto',        // auto-compress on Cloudinary side
+    fetch_format: 'auto',   // serve WebP/AVIF where supported
   }
 });
 
@@ -23,18 +23,19 @@ const videoStorage = new CloudinaryStorage({
   }
 });
 
-// Storage for avatars (separate)
+// Storage for avatars
 const avatarStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'nicechi/avatars',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp']
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    quality: 'auto',
   }
 });
 
 const uploadImages = multer({
   storage: imageStorage,
-  limits: { fileSize: 10 * 1024 * 1024, files: 5 },
+  limits: { fileSize: 5 * 1024 * 1024, files: 10 }, // 5MB per file, max 10
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) cb(null, true);
     else cb(new Error('Only images are allowed'), false);
@@ -59,4 +60,36 @@ const uploadAvatar = multer({
   }
 });
 
-module.exports = { uploadImages, uploadVideo, uploadAvatar };
+// ── Centralised Multer/Cloudinary error handler ───────────────────────────
+// This was missing from the exports — caused "handleMulterError is not a function"
+function handleMulterError(err, req, res, next) {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ msg: 'File too large. Maximum size is 5MB per image.' });
+    }
+    if (err.code === 'LIMIT_FILE_COUNT') {
+      return res.status(400).json({ msg: 'Too many files. Maximum is 10 images at once.' });
+    }
+    if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+      return res.status(400).json({ msg: 'Unexpected file field.' });
+    }
+    return res.status(400).json({ msg: err.message });
+  }
+
+  if (err) {
+    // Cloudinary timeout
+    if (
+      err.http_code === 499 ||
+      (err.message && err.message.toLowerCase().includes('timeout'))
+    ) {
+      return res.status(408).json({
+        msg: 'Upload timed out. Please use smaller images (under 5MB) and try again.'
+      });
+    }
+    return res.status(400).json({ msg: err.message || 'Upload failed. Please try again.' });
+  }
+
+  next();
+}
+
+module.exports = { uploadImages, uploadVideo, uploadAvatar, handleMulterError };
